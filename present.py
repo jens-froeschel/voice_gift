@@ -19,15 +19,22 @@ q = queue.Queue()
 name_file = open("names.txt", "r")
 name_list = name_file.read().splitlines()
 name_list = list(filter(len, name_list))
-name_map={}
+name_map = {}
 with open("names_map.txt") as f:
     for line in f:
-       (key, val) = line.split("|")
-       name_map[int(key)] = val
+        if len(line)<2:
+            continue
+        (key, val) = line.split("|")
+        name_map[key] = val.strip()
 
 inverse_name_map = {v: k for k, v in name_map.items()}
 audiodevice="USB Device 0x1908:0x332a, USB Audio"
 
+print("--------------")
+print( str(name_list) )
+print("--------------")
+print(str(name_map))
+print("--------------")
 
 
 pygame.init()
@@ -67,7 +74,10 @@ def callback(indata, frames, time, status):
         print(status)
     q.put(bytes(indata))
 
-def replace_words(s, words):
+def replace_words_list(name_list, name_map):
+    return list(map(name_map.get, name_list))
+    
+def replace_words_string(s, words):
     for k, v in words.items():
         s = s.replace(k, v)
     return s
@@ -89,7 +99,7 @@ def play_audio(name):
         continue
 
 
-mapped_name_list = replace_words(name_list, name_map)
+mapped_name_list = replace_words_list(name_list, name_map)
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument(
@@ -142,7 +152,7 @@ try:
             print('#' * 80)
 
             #rec = vosk.KaldiRecognizer(model, args.samplerate)
-            rec = vosk.KaldiRecognizer(model, args.samplerate, mapped_name_list)
+            rec = vosk.KaldiRecognizer(model, args.samplerate, str(mapped_name_list).replace("'","\""))
             while True:
                 data = q.get()
                 if(not recording):
@@ -151,7 +161,7 @@ try:
                 if rec.AcceptWaveform(data):
                     res = rec.Result()
                     res_text = json.loads(res)['text']
-                    mapped_name = replace_words(res_text, inverse_name_map)
+                    mapped_name = replace_words_string(res_text, inverse_name_map)
                     print(res)
                     play_audio(mapped_name)
                     with q.mutex:

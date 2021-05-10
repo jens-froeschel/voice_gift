@@ -151,7 +151,7 @@ try:
                 print()
                 print( "Add to the name map:" )
                 print( str(name)+"|"+str(mapped_name) )
-                map_file.write(str(name)+"|"+str(mapped_name))
+                map_file.write(str(name)+"|"+str(mapped_name)+"\n")
                 print()
                 print("---------")
             map_file.close()
