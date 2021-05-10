@@ -3,11 +3,10 @@ set -eux
 
 sudo apt install -y python3 python3-pip
 sudo apt install -y git 
-sudo apt install -y libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0 libportaudio2
+sudo apt install -y libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0 libportaudio2 ffmpeg
 
 pip3 install vosk pygame RPi.GPIO 
 pip3 install ffmpeg-normalize sounddevice pyaudio 
-
 
 git clone https://github.com/alphacep/vosk-api
 

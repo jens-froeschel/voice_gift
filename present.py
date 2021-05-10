@@ -16,7 +16,9 @@ BUTTON = 17
 
 
 q = queue.Queue()
-name_list='[""]'
+name_file = open("names.txt", "r")
+name_list = name_file.read().splitlines()
+name_list = list(filter(len, name_list))
 name_map={"":""}
 inverse_name_map = {v: k for k, v in name_map.items()}
 audiodevice="USB Device 0x1908:0x332a, USB Audio"
@@ -57,7 +59,7 @@ def int_or_str(text):
 def callback(indata, frames, time, status):
     """This is called (from a separate thread) for each audio block."""
     if status:
-        print(status, file=sys.stderr)
+        print(status)
     q.put(bytes(indata))
 
 def replace_words(s, words):

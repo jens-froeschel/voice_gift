@@ -1,20 +1,20 @@
 set -eux
 
-cd audiofiles
+pushd audiofiles
 for f in *"-"*; do
-	mv -- "$f" "${f//-/_}"
+	mv -- "$f" "${f//-/_}" || true
 done
 for f in *" "*; do
-	mv -- "$f" "${f// /_}"
+	mv -- "$f" "${f// /_}" || true
 done
 for f in *","*; do
-	mv -- "$f" "${f//,/_}"
+	mv -- "$f" "${f//,/_}" || true
 done
 for f in *"___"*; do
-	mv -- "$f" "${f//___/_}"
+	mv -- "$f" "${f//___/_}" || true
 done
 for f in *"__"*; do
-	mv -- "$f" "${f//__/_}"
+	mv -- "$f" "${f//__/_}" || true
 done
 
 for f in $( ls | grep [A-Z] ); do 
@@ -39,3 +39,5 @@ for f in *.wav; do
 #	ffmpeg-normalize ${f}
 done
 
+
+popd
