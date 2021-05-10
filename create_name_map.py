@@ -33,6 +33,18 @@ print("")
 pygame.quit()
 
 
+button_pressed = False
+def button_callback(channel):
+    global button_pressed
+    button_pressed = True
+    print("Button Pressed!")
+
+GPIO.setmode(GPIO.BCM)
+GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin to be an input pin and set initial value to be pulled low (off)
+
+GPIO.add_event_detect(BUTTON,GPIO.RISING,callback=button_callback) # Setup event on pin rising edge
+
+
 def int_or_str(text):
     """Helper function for argument parsing."""
     try:
@@ -111,10 +123,16 @@ try:
                 match_count=0
                 print("Say: '"+str(name)+"'")
                 while True:
+                    if(button_pressed):
+                        button_pressed = False
+                        break
+
                     data = q.get()
                     if rec.AcceptWaveform(data):
                         res = rec.Result()
                         res_text = json.loads(res)['text']
+                        if len(res_text) < 1 :
+                            continue
                         print("Recognized: "+str(res_text))
                         print()
                         if res_text == mapped_name:
@@ -130,7 +148,13 @@ try:
                         pass
                     if dump_fn is not None:
                         dump_fn.write(data)
+                print()
+                print( "Add to the name map:" )
+                print( str(name)+"|"+str(mapped_name) )
                 map_file.write(str(name)+"|"+str(mapped_name))
+                print()
+                print("---------")
+            map_file.close()
 
 except KeyboardInterrupt:
     print('\nDone')
