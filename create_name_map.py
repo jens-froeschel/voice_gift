@@ -19,15 +19,7 @@ q = queue.Queue()
 name_file = open("names.txt", "r")
 name_list = name_file.read().splitlines()
 name_list = list(filter(len, name_list))
-name_map={}
-with open("names_map.txt") as f:
-    for line in f:
-       (key, val) = line.split("|")
-       name_map[int(key)] = val
-
-inverse_name_map = {v: k for k, v in name_map.items()}
 audiodevice="USB Device 0x1908:0x332a, USB Audio"
-
 
 
 pygame.init()
@@ -39,19 +31,6 @@ print("Listing available Audio Devices (set in present.py as audiodevice:")
 print("\n".join(names))
 print("")
 pygame.quit()
-
-
-
-recording = False
-def button_callback(channel):
-    global recording
-    recording = True
-    print("Button Pressed!")
-
-GPIO.setmode(GPIO.BCM)
-GPIO.setup(BUTTON, GPIO.IN, pull_up_down=GPIO.PUD_DOWN) # Set pin to be an input pin and set initial value to be pulled low (off)
-
-GPIO.add_event_detect(BUTTON,GPIO.RISING,callback=button_callback) # Setup event on pin rising edge
 
 
 def int_or_str(text):
@@ -71,25 +50,6 @@ def replace_words(s, words):
     for k, v in words.items():
         s = s.replace(k, v)
     return s
-
-def play_audio(name):
-    name = name.lower().replace(" ","_")
-    f="audiofiles/"+str(name)+".wav"
-    if( not os.path.isfile(f)):
-        print("File "+str(f)+" doesn't exist")
-        return
-    print("Playing "+str(f))
-    global recording
-    recording = False
-    pygame.mixer.pre_init(devicename=audiodevice)
-    pygame.mixer.init()
-    pygame.mixer.music.load(f)
-    pygame.mixer.music.play()
-    while pygame.mixer.music.get_busy() == True:
-        continue
-
-
-mapped_name_list = replace_words(name_list, name_map)
 
 parser = argparse.ArgumentParser(add_help=False)
 parser.add_argument(
@@ -142,25 +102,35 @@ try:
             print('#' * 80)
 
             #rec = vosk.KaldiRecognizer(model, args.samplerate)
-            rec = vosk.KaldiRecognizer(model, args.samplerate, mapped_name_list)
-            while True:
-                data = q.get()
-                if(not recording):
-                    #print("Not recording ("+str(recording)+"), continue!")
-                    continue
-                if rec.AcceptWaveform(data):
-                    res = rec.Result()
-                    res_text = json.loads(res)['text']
-                    mapped_name = replace_words(res_text, inverse_name_map)
-                    print(res)
-                    play_audio(mapped_name)
-                    with q.mutex:
-                        q.queue.clear()
-                else:
-                    pass
-                    print(rec.PartialResult())
-                if dump_fn is not None:
-                    dump_fn.write(data)
+            rec = vosk.KaldiRecognizer(model, args.samplerate)
+            if os.path.isfile("names_map.txt"):
+                os.replace("names_map.txt", "names_map.txt.bak")
+            map_file = open("names_map.txt","w")
+            for name in name_list:
+                mapped_name="bla"
+                match_count=0
+                print("Say: '"+str(name)+"'")
+                while True:
+                    data = q.get()
+                    if rec.AcceptWaveform(data):
+                        res = rec.Result()
+                        res_text = json.loads(res)['text']
+                        print("Recognized: "+str(res_text))
+                        print()
+                        if res_text == mapped_name:
+                            match_count += 1
+                        else:
+                            mapped_name = res_text
+                            match_count = 0
+                        with q.mutex:
+                            q.queue.clear()
+                        if match_count >= 2:
+                            break
+                    else:
+                        pass
+                    if dump_fn is not None:
+                        dump_fn.write(data)
+                map_file.write(str(name)+"|"+str(mapped_name))
 
 except KeyboardInterrupt:
     print('\nDone')
