@@ -23,6 +23,15 @@ wget -O model.zip https://alphacephei.com/vosk/models/vosk-model-small-de-0.15.z
 unzip model.zip
 mv vosk-model* model
 
+#Setup the present service
+sudo cp present.service /etc/systemd/system/
+systemctl status present
+sudo systemctl enable present
+sudo systemctl restart present
+systemctl status present
+sudo journalctl -u present
+
+
 sudo reboot
 
 
